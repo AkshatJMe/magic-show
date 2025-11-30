@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mind Reader</title>
+
+    <style>
+      body {
+        background: radial-gradient(circle, #0a0a0a, #000);
+        color: #fff;
+        font-family: "Trebuchet MS", sans-serif;
+        text-align: center;
+        padding: 20px;
+      }
+      h1 {
+        font-size: 40px;
+        margin-bottom: 10px;
+        text-shadow: 0 0 15px #f0f;
+      }
+      .fade {
+        animation: fadein 1.2s ease;
+      }
+      @keyframes fadein {
+        from {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      .card {
+        display: inline-block;
+        margin: 6px;
+        padding: 10px 14px;
+        font-size: 22px;
+        background: #222;
+        border-radius: 8px;
+        border: 1px solid #444;
+        transition: transform 0.2s;
+      }
+      .card:hover {
+        transform: scale(1.2);
+        cursor: pointer;
+        box-shadow: 0 0 15px #f0f;
+      }
+      .pile {
+        border: 2px solid #555;
+        border-radius: 10px;
+        padding: 15px;
+        margin: 15px;
+        width: 28%;
+        display: inline-block;
+        vertical-align: top;
+        background: rgba(255, 255, 255, 0.05);
+        transition: 0.2s;
+      }
+      .pile:hover {
+        box-shadow: 0 0 20px #0ff;
+        cursor: pointer;
+        transform: scale(1.05);
+      }
+      button {
+        background: #8e44ad;
+        border: none;
+        padding: 12px 25px;
+        color: white;
+        font-size: 18px;
+        border-radius: 6px;
+        margin-top: 20px;
+        cursor: pointer;
+        box-shadow: 0 0 12px #8e44ad;
+      }
+      button:hover {
+        background: #9b59b6;
+        box-shadow: 0 0 20px #9b59b6;
+      }
+      #reveal-card {
+        font-size: 35px;
+        color: #ff0;
+        text-shadow: 0 0 20px #ff0;
+        margin-top: 30px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1 class="fade">✨ Mind Reader ✨</h1>
+
+    <div id="story" class="fade">
+      <p>
+        Welcome, traveler. I invite you to step into the realm of the
+        impossible.
+      </p>
+      <p>
+        In a moment, you will see 27 cards. <b>Choose one in your mind only.</b
+        ><br />
+        Do not click it. Do not whisper it. <br />
+        Let the card live only in your thoughts…
+      </p>
+      <button onclick="begin()">I am ready</button>
+    </div>
+
+    <div id="cards"></div>
+    <div id="piles"></div>
+    <div id="reveal"></div>
+
+    <script>
+      // ---------- Prepare Cards ----------
+      let suits = ["♠", "♥", "♦", "♣"];
+      let values = [
+        "A",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "J",
+        "Q",
+        "K",
+      ];
+
+      let fullDeck = [];
+      suits.forEach((s) => values.forEach((v) => fullDeck.push(v + s)));
+
+      function shuffle(a) {
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+      }
+
+      shuffle(fullDeck);
+      let deck = fullDeck.slice(0, 27);
+
+      let round = 1;
+
+      // ---------- Step 1: Show Cards ----------
+      function begin() {
+        document.getElementById("story").innerHTML = `
+        <p class="fade">Good… Now gaze upon the 27 cards.<br>
+        <b>Think of exactly one.</b> Burn it into your memory.</p>
+        <p class="fade">When you have chosen, click the button below.</p>
+        <button onclick="deal()">I have chosen my card</button>
+    `;
+
+        document.getElementById("cards").innerHTML = deck
+          .map((c) => `<div class="card fade">${c}</div>`)
+          .join("");
+      }
+
+      // ---------- Step 2: Deal Into Piles ----------
+      function deal() {
+        document.getElementById("cards").innerHTML = "";
+        document.getElementById("story").innerHTML = `
+        <p class="fade">Round ${round}: Your mind holds the card…<br>
+        Tell me: <b>Which pile contains your secret thought?</b></p>
+    `;
+
+        let pilesArr = [[], [], []];
+
+        for (let i = 0; i < 27; i++) {
+          pilesArr[i % 3].push(deck[i]);
+        }
+
+        window.currentPiles = pilesArr;
+
+        let html = "";
+        for (let i = 0; i < 3; i++) {
+          html += `
+            <div class="pile fade" onclick="choose(${i})">
+                <h2>Pile ${i + 1}</h2>
+                ${pilesArr[i].map((c) => `<div>${c}</div>`).join("")}
+            </div>
+        `;
+        }
+        document.getElementById("piles").innerHTML = html;
+      }
+
+      // ---------- Step 3: Spectator Picks Their Pile ----------
+      function choose(index) {
+        let p = window.currentPiles;
+
+        // ALWAYS put chosen pile in the middle
+        let newDeck;
+        if (index === 0) newDeck = p[1].concat(p[0], p[2]);
+        if (index === 1) newDeck = p[0].concat(p[1], p[2]);
+        if (index === 2) newDeck = p[0].concat(p[2], p[1]);
+
+        deck = newDeck;
+
+        if (round < 3) {
+          round++;
+          deal();
+        } else {
+          dramaticReveal();
+        }
+      }
+
+      // ---------- Step 4: Dramatic Reveal ----------
+      function dramaticReveal() {
+        document.getElementById("story").innerHTML = "";
+        document.getElementById("piles").innerHTML = "";
+
+        document.getElementById("reveal").innerHTML = `
+        <p class="fade">I’m reaching into your thoughts…</p>
+    `;
+
+        setTimeout(() => {
+          document.getElementById("reveal").innerHTML += `
+            <p class="fade">Your card drifts upward… emerging from the darkness…</p>
+        `;
+        }, 1700);
+
+        setTimeout(() => {
+          let chosen = deck[13];
+          document.getElementById("reveal").innerHTML += `
+            <h2 id="reveal-card" class="fade">✨ Your Card Is: ${chosen} ✨</h2>
+        `;
+        }, 3500);
+      }
+    </script>
+  </body>
+</html>
